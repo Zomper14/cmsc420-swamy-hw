@@ -10,6 +10,7 @@ public class ValleyTraveler {
 
     private int[] landscape;
     private int size; 
+    private boolean[] isValley;
 
     /**
      * Constructor to initialize the magical map with the given landscape of
@@ -23,6 +24,7 @@ public class ValleyTraveler {
             this.landscape[i] = landscape[i];
         }
         this.size = landscape.length;
+        this.isValley = new boolean[landscape.length];
     }
 
     /**
@@ -56,17 +58,18 @@ public class ValleyTraveler {
      * @return The excavated valley point.
      */
     public int remove() {
-        int valley = getFirst();
-        int[] newLandscape = new int[size - 1];
-        int index = 0;
-        for (int i = 0; i < size; i++) {
-            if (landscape[i] != valley) {
-                newLandscape[index++] = landscape[i];
-            }
+        int valleyIndex = findFirstValleyIndex();
+        int valley = landscape[valleyIndex];
+
+        // Shift elements left to remove the valley element
+        for (int i = valleyIndex; i < size - 1; i++) {
+            landscape[i] = landscape[i + 1];
         }
-        landscape = newLandscape;
-        size--;
+
+        size--; // Decrease the size
+        updateNeighborsAfterRemoval(valleyIndex);
         return valley;
+    
     }
 
     /**
@@ -76,16 +79,17 @@ public class ValleyTraveler {
      */
     public void insert(int height) {
         int valleyIndex = findFirstValleyIndex();
-        int[] newLandscape = new int[size + 1];
-        for (int i = 0; i < valleyIndex; i++) {
-            newLandscape[i] = landscape[i];
+
+        // Shift elements right to make space for the new element
+        for (int i = size; i > valleyIndex; i--) {
+            landscape[i] = landscape[i - 1];
         }
-        newLandscape[valleyIndex] = height;
-        for (int i = valleyIndex; i < size; i++) {
-            newLandscape[i + 1] = landscape[i];
-        }
-        landscape = newLandscape;
-        size++;
+
+        landscape[valleyIndex] = height;
+        size++; // Increase the size
+
+        // Update the valleys around the inserted element
+        updateNeighborsAfterInsertion(valleyIndex);
     }
 
 
@@ -112,5 +116,40 @@ public class ValleyTraveler {
         }
         return -1; // This should never happen
     }
+
+    private void computeValleys() {
+        for (int i = 0; i < size; i++) {
+            isValley[i] = checkValley(i);
+        }
+    }
+
+    private boolean checkValley(int i) {
+        if (size == 1) return true; // Single element is always a valley
+        if (i == 0) return landscape[i] < landscape[i + 1];
+        if (i == size - 1) return landscape[i] < landscape[i - 1];
+        return landscape[i] < landscape[i - 1] && landscape[i] < landscape[i + 1];
+    }
+
+    private void updateNeighborsAfterRemoval(int index) {
+        if (index > 0) {
+            isValley[index - 1] = checkValley(index - 1);
+        }
+        if (index < size) { // Since size is now reduced
+            isValley[index] = checkValley(index);
+        }
+    }
+
+    private void updateNeighborsAfterInsertion(int index) {
+        if (index > 0) {
+            isValley[index - 1] = checkValley(index - 1);
+        }
+        if (index < size - 1) {
+            isValley[index + 1] = checkValley(index + 1);
+        }
+        isValley[index] = checkValley(index); // New element itself might be a valley
+    }
+
+
+
 
 }
